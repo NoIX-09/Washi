@@ -1,0 +1,141 @@
+---
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import BackToTop from '../components/BackToTop.astro';
+import Loading from '../components/Loading.astro';
+import RainFX from '../components/RainFX.astro';
+import FireflyFX from '../components/FireflyFX.astro';
+import SakuraFX from '../components/SakuraFX.astro';
+import { site } from '../site.config';
+import { themeCss } from '../theme';
+import '../styles/global.css';
+
+interface Props {
+  /** 本页自己的标题片段（如 "Blog"、文章标题）；不传则只用站名，首页就是这么用的 */
+  title?: string;
+  /** 站名，默认取 SITE_NAME。一般不传，留这个口子是给站点配置拿不到的场合兜底 */
+  siteName?: string;
+  showFooterIllustration?: boolean;
+}
+
+const { title, siteName = site.name, showFooterIllustration = true } = Astro.props;
+
+// 标题在这里统一拼，不让站名散进各页 —— 否则 clone 的人改了自己的 SITE_NAME，
+// 标签页上还挂着原作者的站名
+//
+// 片段与站名相同时只留一个：作品/文章的标题碰巧就等于站名时会拼出「X · X」
+const pageTitle = title && title !== siteName ? `${title} · ${siteName}` : siteName;
+
+const pathname = Astro.url.pathname.replace(/\/+$/, '');
+
+// 首页单独放插图（位于卡片上方），其余页面统一放到页脚上方
+const isHome = /^\/(?:en|ja|zh-TW|zh-CN)\/home$/.test(pathname);
+
+// 详情页 = 文章正文 / 作品详情（列表页本身不算）。
+// 详情页与其它页面各存一套粒子效果偏好，详见 <body> 顶部那段内联脚本
+const isDetail = /^\/(?:en|ja|zh-TW|zh-CN)\/(?:blog|works)\/.+$/.test(pathname);
+---
+
+<html lang={Astro.currentLocale || 'zh-CN'}>
+  <head>
+    <meta charset="utf-8" />
+    {/* 配色变量由 src/theme.json 生成，见 src/theme.ts。
+        必须 inline 在 <head> 且早于任何用到它的样式表 —— 否则首帧会先按
+        空变量渲染一遍，暗色下闪一下白 */}
+    <style is:global set:html={themeCss}></style>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="preload" href="/fonts/wenkai-regular/wenkai-regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{pageTitle}</title>
+    <script is:inline>document.documentElement.classList.toggle('mascot-off', localStorage.getItem('mascot') === 'off')</script>
+    <slot name="head" />
+  </head>
+  <body data-page-kind={isDetail ? 'detail' : 'normal'}>
+    {/* 偏好判定放在 <body> 最前面：首帧之前就把 class 挂好，避免默认跟随系统暗色时闪一下浅色。
+        各 FX 组件解析到自己的脚本时会读一次 body 的 class 自行启动，所以这里不派发 fx-init */}
+    <script is:inline>
+      (function(){
+        var body = document.body;
+        var kind = body.dataset.pageKind === 'detail' ? 'detail' : 'normal';
+
+        // 昼夜：有记录按记录
+        var t = localStorage.getItem('theme');
+        // 没记录 → 跟随系统（只在加载时判定一次，之后不再跟随系统变化）
+        if (t !== 'dark' && t !== 'light') {
+          t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        if (t === 'dark') body.classList.add('dark');
+
+        // 粒子：详情页与其它页各存一套偏好，互不影响
+        var key = kind === 'detail' ? 'fx:detail' : 'fx:normal';
+        var f = localStorage.getItem(key);
+        if (f === null && kind === 'normal') {
+          // 老键（改动前全站共用一套）迁进普通页那一套；详情页不继承，直接走新的默认
+          var legacy = localStorage.getItem('fx');
+          if (legacy !== null) {
+            f = legacy;
+            localStorage.setItem(key, legacy);
+          }
+        }
+        if (f === 'rain') body.classList.add('fx-rain');
+        else if (f === 'firefly') body.classList.add('fx-firefly');
+        else if (f === 'sakura') body.classList.add('fx-sakura');
+        else if (f === 'none') body.classList.add('fx-none');
+        // 从没选过：普通页跟着昼夜走（浅色樱花 / 暗色萤火虫，与改动前一致）
+        // 详情页默认关（fx-none 只是让按钮显示「关」的图标，不写 localStorage，
+        // 所以「没记录」的状态不会被这次默认给坐实掉）
+        else if (kind === 'normal') body.classList.add(t === 'dark' ? 'fx-firefly' : 'fx-sakura');
+        else body.classList.add('fx-none');
+      })();
+    </script>
+    <Loading />
+    <div class="content">
+      <Navbar siteName={siteName} />
+      <slot />
+      <Footer showIllustration={!isHome && showFooterIllustration} />
+    </div>
+    <RainFX />
+    <FireflyFX />
+    <SakuraFX />
+    <BackToTop />
+    <script is:inline>
+      // body 的 class 在 <body> 顶部就挂好了，这里只补一个兜底事件
+      document.body.dispatchEvent(new CustomEvent('fx-init'));
+    </script>
+  </body>
+</html>
+
+<style>
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--c-page);
+    /* 暗色下用 --c-scrim 往纸纹上压一层遮罩；浅色下它是 transparent，这层等于不存在。
+       两模式共用一条规则，靠 token 翻转，不必再写一份 body.dark */
+    background-image: linear-gradient(var(--c-scrim), var(--c-scrim)), url('/rice-paper-2.webp');
+  }
+  .content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+  /* 宣纸底纹：这张底纹几乎全是 alpha（61% 近透明、最深处才 40%），WebP 的 alpha 通道
+     压不动，146KB；AVIF 同一张只要 47KB，肉眼无差。认 image-set 的浏览器换成 AVIF。
+     兜底必须写在**另一条规则**里 —— 写在同一个规则里两条 background-image，构建时的
+     CSS 压缩会把被覆盖的那条直接删掉，兜底就没了 */
+  @supports (background-image: image-set(url('/rice-paper-2.webp') type('image/webp'))) {
+    body {
+      background-image: linear-gradient(var(--c-scrim), var(--c-scrim)),
+        image-set(
+          url('/rice-paper-2.avif') type('image/avif'),
+          url('/rice-paper-2.webp') type('image/webp')
+        );
+    }
+  }
+</style>

@@ -1,0 +1,164 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { Image } from 'astro:assets';
+import illustration from '../../assets/noix-illustration.png';
+import Profile from '../../components/Profile.astro';
+import Status from '../../components/Status.astro';
+import NoIXCard from '../../components/NoIXCard.astro';
+import TechStack from '../../components/TechStack.astro';
+import Activity from '../../components/Activity.astro';
+import { hero } from '../../site.config';
+import { LOCALES, type Locale } from '../../i18n/translations';
+
+export function getStaticPaths() {
+  return LOCALES.map(l => ({ params: { locale: l } }));
+}
+
+const locale = (Astro.currentLocale || 'zh-CN') as Locale;
+
+const quote = hero.quote ?? '';
+// 打字动画宽度：按等宽字体列宽计（CJK/全角=2列，半角=1列），匹配 LXGW WenKai Mono
+const quoteCh = [...quote].reduce((n, c) => n + (((c.codePointAt(0) ?? 0) > 0xFF) ? 2 : 1), 0);
+---
+
+<Layout>
+  <div class="hero">
+    <div class="hero-title">
+      <span class="hero-text">{hero.name}</span>
+      <span class="hero-sub">{hero.subtitle}</span>
+    </div>
+    <p class="hero-quote" style={`--quote-steps:${quoteCh}; --quote-ch:${quoteCh}ch`}>{quote}</p>
+  </div>
+  <hr class="pencil-line wide" />
+  <div class="illustration-wrap" data-mascot>
+    {/* width 要写 CSS 里真实的展示宽度（.illustration-wrap 是 max-width:880px - 左右各 24px 内边距），
+        Astro 会拿它当 sizes 的基准 */}
+    <Image class="illustration" src={illustration} alt="" width={832} height={416} loading="lazy" decoding="async" />
+  </div>
+  <div class="columns">
+    <div class="col col-main">
+      <TechStack />
+      <Activity />
+    </div>
+    <div class="col col-side">
+      <Profile />
+      <Status />
+    </div>
+    <div class="col col-bot">
+      <NoIXCard />
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 14vh;
+    padding-bottom: 10vh;
+  }
+  .hero-title {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .hero-text {
+    font-family: 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', serif;
+    font-size: 72px;
+    font-weight: 500;
+    color: var(--c-heading);
+    letter-spacing: .04em;
+  }
+  /* 字重只有 400 / 500 两档（Light 300 已砍，见 scripts/font-list.mjs），别写 300 */
+  .hero-sub {
+    font-family: 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', serif;
+    font-size: 36px;
+    color: var(--c-text);
+    letter-spacing: .08em;
+  }
+  .hero-quote {
+    margin: 16px 0 0;
+    font-family: 'LXGW WenKai Mono', 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', monospace;
+    font-size: 14px;
+    color: var(--c-text);
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 2px solid var(--c-text);
+    width: 0;
+    animation: typing 8s steps(var(--quote-steps)) infinite, blink .6s step-end infinite;
+  }
+  .columns {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    grid-template-areas:
+      "main side"
+      "main bot";
+    align-items: start;
+    gap: 24px;
+    max-width: 880px;
+    width: 100%;
+    padding: 0 24px 56px;
+    box-sizing: border-box;
+  }
+  .col {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .col-main { grid-area: main; }
+  .col-side { grid-area: side; }
+  .col-bot { grid-area: bot; }
+  .illustration-wrap {
+    position: relative;
+    z-index: 3;
+    width: 100%;
+    max-width: 880px;
+    padding: 0 24px;
+    box-sizing: border-box;
+    margin: 8px auto 0;
+  }
+  .illustration {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-bottom: -8%; /* 图 2:1，-8% 宽 ≈ 16% 高，向下压住卡片顶部 */
+  }
+  @keyframes typing {
+    0%   { width: 0; }                 /* 开始：空白 */
+    30%  { width: var(--quote-ch); }   /* 打完：逐字输入 */
+    60%  { width: var(--quote-ch); }   /* 停留 */
+    90%  { width: 0; }                 /* 逐字删除 */
+    100% { width: 0; }                 /* 短暂停顿后循环 */
+  }
+  @keyframes blink {
+    0%, 100% { border-color: var(--c-text); }
+    50% { border-color: transparent; }
+  }
+
+  @media (max-width: 900px) {
+    .hero { padding-top: 8vh; padding-bottom: 8vh; }
+    .hero-text { font-size: 52px; }
+    .hero-sub { font-size: 28px; }
+    .hero-quote { font-size: 12px; max-width: 90vw; }
+    .columns { padding: 0 16px 40px; gap: 16px; }
+    .illustration-wrap { padding: 0 16px; }
+  }
+
+  @media (max-width: 600px) {
+    .hero { padding-top: 6vh; padding-bottom: 6vh; }
+    .hero-text { font-size: 36px; }
+    .hero-sub { font-size: 20px; }
+    .hero-quote { font-size: 11px; max-width: 88vw; }
+    .columns {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "side"
+        "main"
+        "bot";
+      padding: 0 12px 32px;
+      gap: 14px;
+    }
+    .illustration-wrap { padding: 0 12px; }
+  }
+</style>

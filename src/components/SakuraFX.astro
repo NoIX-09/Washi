@@ -1,0 +1,120 @@
+<canvas id="sakura-canvas" style="display:none"></canvas>
+
+<style>
+  #sakura-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+  body.fx-sakura #sakura-canvas {
+    display: block !important;
+  }
+</style>
+
+<script>
+import { readThemeColors } from '../scripts/theme-colors';
+
+(function() {
+  const canvas = document.getElementById('sakura-canvas') as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d')!;
+
+  interface Petal { x: number; y: number; r: number; speed: number; wobble: number; wobbleSpeed: number; drift: number; swing: number; opacity: number }
+  let petals: Petal[] = [];
+  let animId = 0;
+  let running = false;
+  // 颜色来自 --c-fx-sakura-rgb，每次启动时重读（见 startFX）
+  let colors = readThemeColors();
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  for (let i = 0; i < 30; i++) {
+    petals.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: 3 + Math.random() * 5,
+      speed: .4 + Math.random() * .8,
+      wobble: Math.random() * Math.PI * 2,
+      wobbleSpeed: .01 + Math.random() * .02,
+      drift: -.3 + Math.random() * .6,
+      swing: .5 + Math.random(),
+      opacity: .5 + Math.random() * .3,
+    });
+  }
+
+  function drawPetal(x, y, r, rot, alpha) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.beginPath();
+    ctx.moveTo(0, -r);
+    ctx.bezierCurveTo(r * .6, -r * .4, r * .6, r * .4, 0, r);
+    ctx.bezierCurveTo(-r * .6, r * .4, -r * .6, -r * .4, 0, -r);
+    ctx.fillStyle = `rgba(${colors.sakura},${alpha})`;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function draw() {
+    if (!running) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (const p of petals) {
+      p.wobble += p.wobbleSpeed;
+      const swingX = Math.sin(p.wobble) * p.swing;
+      p.y += p.speed;
+      p.x += p.drift + swingX * .5;
+
+      drawPetal(p.x, p.y, p.r, p.wobble * .5, p.opacity);
+
+      if (p.y > canvas.height + 20) {
+        p.y = -20;
+        p.x = Math.random() * canvas.width;
+      }
+      if (p.x < -20) p.x = canvas.width + 20;
+      if (p.x > canvas.width + 20) p.x = -20;
+    }
+
+    animId = requestAnimationFrame(draw);
+  }
+
+  function startFX() {
+    // 重读颜色，且必须放在守卫之前：切昼夜时 MutationObserver 走的也是这条路径，
+    // 已经跑着的时候也要把新颜色换上去
+    colors = readThemeColors();
+    if (running) return;
+    running = true;
+    canvas.style.display = 'block';
+    draw();
+  }
+  function stopFX() {
+    running = false;
+    cancelAnimationFrame(animId);
+    canvas.style.display = 'none';
+  }
+
+  const observer = new MutationObserver(() => {
+    if (document.body.classList.contains('fx-sakura')) {
+      startFX();
+    } else {
+      stopFX();
+    }
+  });
+  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+  if (document.body.classList.contains('fx-sakura')) {
+    if ('requestIdleCallback' in window) requestIdleCallback(startFX, { timeout: 2500 });
+    else startFX();
+  }
+
+  // Layout 的偏好脚本可能晚于本模块执行，它初始化完会补派一次 fx-init
+  document.body.addEventListener('fx-init', function() {
+    if (document.body.classList.contains('fx-sakura')) startFX();
+  });
+})();
+</script>

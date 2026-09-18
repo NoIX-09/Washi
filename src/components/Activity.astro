@@ -1,0 +1,189 @@
+---
+import { getCollection } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+import { t, type Locale } from '../i18n/translations';
+import { home } from '../site.config';
+
+const locale = (Astro.currentLocale || 'zh-CN') as Locale;
+const activity = (await getCollection('activity')).sort((a, b) => b.data.date.localeCompare(a.data.date));
+
+// 显示条数走 ACTIVITY_LIMIT（site.config.ts 里默认 3，0 = 不折叠）。
+// 条目数本来就不超过限值时没有可折叠的东西，按钮整个不渲染
+const limit = home.activityLimit;
+const collapsible = limit > 0 && activity.length > limit;
+const hiddenCount = collapsible ? activity.length - limit : 0;
+
+const labelMore = t('home.activityMore', locale).replace('{n}', String(hiddenCount));
+const labelLess = t('home.activityLess', locale);
+---
+
+<section class="card" data-activity>
+  <h3 class="card-title">{t('home.activity', locale)}</h3>
+  {/* 超出 limit 的条目照样渲染进 HTML，只是带上 tl-extra 由 CSS 折起 ——
+      站点是 SSG，内容本来就在文档里，展开只是切一个 class，不需要请求 */}
+  <ul class="timeline">
+    {activity.map((a, i) => (
+      <li class:list={['tl-item', collapsible && i >= limit && 'tl-extra']}>
+        <span class="tl-dot"></span>
+        <div class="tl-body">
+          <time>{a.data.date}</time>
+          <p>{a.data.text}</p>
+        </div>
+      </li>
+    ))}
+  </ul>
+  {collapsible && (
+    // hidden 由脚本摘掉：禁用 JS 时条目本来就是全展开的，
+    // 不该留一个点了没反应的按钮
+    <button
+      class="more-btn"
+      type="button"
+      aria-expanded="true"
+      data-label-more={labelMore}
+      data-label-less={labelLess}
+      hidden
+    >
+      <span class="more-text">{labelMore}</span>
+      <Icon class="more-icon" name="ph:caret-down" size="14" />
+    </button>
+  )}
+</section>
+
+<script>
+  // 折叠状态全靠 is-collapsed 这一个 class：脚本没跑时它不存在，条目就全部展开，
+  // 按钮也因 hidden 不出现 —— 不会留下「有按钮但点不动」的残局。
+  // 用 data-activity + 组件内查询而不是 id，是为了同一页放两个实例也不打架
+  const COLLAPSED = 'is-collapsed';
+  const TAIL = 'is-tail';
+
+  document.querySelectorAll('[data-activity]').forEach((card) => {
+    const list = card.querySelector<HTMLElement>('.timeline');
+    const btn = card.querySelector<HTMLElement>('.more-btn');
+    if (!list || !btn) return;
+
+    const text = btn.querySelector('.more-text');
+    const items = Array.from(list.querySelectorAll('.tl-item'));
+    // tl-extra 的显隐只由 class 决定、不随展开状态变，所以这里算一次就够
+    const shown = items.filter((el) => !el.classList.contains('tl-extra'));
+
+    list.classList.add(COLLAPSED);
+    btn.hidden = false;
+
+    const sync = () => {
+      const collapsed = list.classList.contains(COLLAPSED);
+      btn.setAttribute('aria-expanded', String(!collapsed));
+      btn.classList.toggle('is-open', !collapsed);
+      if (text) {
+        text.textContent = (collapsed ? btn.dataset.labelMore : btn.dataset.labelLess) ?? '';
+      }
+      // 虚线尾巴跟着「最后一条可见的」走：折起时它是第 limit 条，展开后才是 :last-child
+      items.forEach((el) => el.classList.remove(TAIL));
+      const visible = collapsed ? shown : items;
+      visible[visible.length - 1]?.classList.add(TAIL);
+    };
+
+    btn.addEventListener('click', () => {
+      list.classList.toggle(COLLAPSED);
+      sync();
+    });
+
+    sync();
+  });
+</script>
+
+<style>
+  .card {
+    border-radius: 12px;
+    background: var(--c-surface);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .card-title {
+    margin: 0;
+    font-family: 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', serif;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--c-heading);
+  }
+  .timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .tl-item { position: relative; display: flex; gap: 12px; }
+  /* 时间轴虚线：从圆点下沿垂到下一条的圆点。
+     bottom 取负的 gap 值，好让相邻两条的虚线在间隙里接上。
+     绝对定位所以不参与上面的 flex 布局（否则 ::before 会变成一个 flex item） */
+  .tl-item::before {
+    content: '';
+    position: absolute;
+    left: 3.5px;
+    top: 14px;
+    bottom: -12px;
+    border-left: 1px dashed rgba(var(--c-accent-rgb), .28);
+  }
+  /* 最后一条可见的不留尾巴：展开时它就是 :last-child；
+     折起时最后一条可见的是第 limit 条、并非 :last-child，故选不到，由脚本标 is-tail */
+  .tl-item:last-child::before,
+  .tl-item.is-tail::before { display: none; }
+  /* 折起的条目：选择器三个 class，权重高于上面 .tl-item 的 display: flex */
+  .timeline.is-collapsed .tl-extra { display: none; }
+  .tl-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--c-accent-solid);
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+  .tl-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .tl-body time {
+    font-family: 'LXGW WenKai Mono', 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', monospace;
+    font-size: 12px;
+    color: var(--c-muted-dim);
+  }
+  .tl-body p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--c-text);
+    line-height: 1.6;
+  }
+
+  .more-btn {
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 14px;
+    border: 1px solid rgba(var(--c-accent-rgb), .25);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--c-text);
+    font-family: 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .2s, border-color .2s;
+  }
+  .more-btn:hover { background: rgba(var(--c-accent-rgb), .08); border-color: rgba(var(--c-accent-rgb), .42); }
+  .more-btn:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+  /* [hidden] 是 UA 样式里的 display: none，会被上面的 display: inline-flex 盖掉，
+     所以必须显式再写一遍，否则「无 JS 不显示按钮」的兜底就失效了 */
+  .more-btn[hidden] { display: none; }
+  .more-icon { transition: transform .2s; }
+  .more-btn.is-open .more-icon { transform: rotate(180deg); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .more-btn, .more-icon { transition: none; }
+  }
+
+  @media (max-width: 600px) {
+    .card { padding: 16px; }
+  }
+</style>

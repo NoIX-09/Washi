@@ -1,0 +1,69 @@
+---
+import { Image } from 'astro:assets';
+import illustration from '../assets/noix-illustration.png';
+import { site } from '../site.config';
+
+interface Props {
+  showIllustration?: boolean;
+}
+
+const { showIllustration = false } = Astro.props;
+---
+<div class:list={['footer-area', { 'has-illustration': showIllustration }]}>
+  {/* width 要写 CSS 里真实的展示宽度（.footer-illustration 是 max-width:440px），
+      Astro 会拿它当 sizes 的基准：写 1760 的话，≥1760 视口会去拉 1760px 那档，
+      而实际只显示 440px */}
+  {showIllustration && (
+    <Image class="footer-illustration" src={illustration} alt="" width={440} height={220} loading="lazy" decoding="async" data-mascot />
+  )}
+  <footer>
+    <p>{site.copyright}</p>
+  </footer>
+</div>
+
+<style>
+  .footer-area {
+    width: 100%;
+  }
+  .footer-area.has-illustration {
+    position: relative;
+    margin-top: 48px;
+  }
+  .footer-illustration {
+    display: block;
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+    height: auto;
+  }
+  footer {
+    text-align: center;
+    padding: 32px 24px;
+  }
+  footer p {
+    margin: 0;
+    font-family: 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', serif;
+    font-size: 13px;
+    color: var(--c-muted);
+    letter-spacing: .03em;
+  }
+  /* 有插图时：文字压在图片上方，文字上移、图片相对下移，保持重叠 */
+  .has-illustration footer {
+    position: absolute;
+    bottom: 8%;
+    left: 0;
+    right: 0;
+    z-index: 4;
+    padding: 0 24px;
+  }
+  /* 看板娘关闭时：隐藏插图，并把页脚文字恢复到普通流（插图没了之后
+     .footer-area 会塌成 0 高，absolute 的页脚就没有可定位的盒子了）。
+     注意 mascot-off 挂在 <html> 上，必须写成 html.mascot-off —— Astro 只对 html/body
+     这两个元素选择器免于加 scope 属性，写成 .mascot-off 会被编成
+     .mascot-off[data-astro-cid-x]，而 <html> 上并没有这个属性，规则会静默失效。 */
+  html.mascot-off .footer-area.has-illustration { margin-top: 0; }
+  html.mascot-off .has-illustration footer {
+    position: static;
+    padding: 32px 24px;
+  }
+</style>

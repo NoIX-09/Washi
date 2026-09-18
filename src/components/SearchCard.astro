@@ -1,0 +1,108 @@
+---
+export interface Props {
+  label: string;
+  url: string;
+  type: string;
+  desc?: string;
+}
+
+const { label, url, type, desc } = Astro.props;
+
+const icons: Record<string, string> = {
+  '页面': 'ph:house-duotone',
+  '文章': 'ph:notebook-duotone',
+  '作品': 'ph:palette-duotone',
+  '友链': 'ph:link-simple-horizontal-duotone',
+};
+import { Icon } from 'astro-icon/components';
+---
+
+<a class="search-card" href={url} target={url.startsWith('http') ? '_blank' : ''}>
+  <div class="sc-icon">
+    <Icon name={icons[type] || 'ph:circle-duotone'} size="24" />
+  </div>
+  <div class="sc-body">
+    <div class="sc-title">{label}</div>
+    {desc && <div class="sc-desc">{desc}</div>}
+    <div class="sc-meta">
+      <span class="sc-type">{type}</span>
+      <span class="sc-url">{url.replace(/^https?:\/\//, '')}</span>
+    </div>
+  </div>
+</a>
+
+<style>
+  .search-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 24px;
+    border-radius: 12px;
+    background: var(--c-surface);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    text-decoration: none;
+    transition: transform .2s, background .2s;
+  }
+  .search-card:hover {
+    transform: translateY(-2px);
+    background: var(--c-surface-strong);
+  }
+  .sc-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    background: rgba(var(--c-accent-rgb), .1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--c-accent);
+  }
+  .sc-body {
+    flex: 1;
+    min-width: 0;
+  }
+  .sc-title {
+    font-family: 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--c-heading);
+    line-height: 1.5;
+  }
+  .sc-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .sc-type {
+    font-size: 11px;
+    color: var(--c-accent);
+    background: rgba(var(--c-accent-rgb), .1);
+    padding: 1px 8px;
+    border-radius: 4px;
+  }
+  .sc-url {
+    font-family: 'LXGW WenKai Mono', 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', monospace;
+    font-size: 11px;
+    color: var(--c-muted-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .sc-desc {
+    font-size: 12px;
+    color: var(--c-text);
+    margin-top: 6px;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 600px) {
+    .search-card { padding: 16px; gap: 14px; }
+    .sc-icon { width: 40px; height: 40px; border-radius: 8px; }
+    .sc-icon :global(svg) { width: 20px; height: 20px; }
+    .sc-title { font-size: 14px; }
+    .sc-url { display: none; }
+  }
+</style>

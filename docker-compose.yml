@@ -1,0 +1,14 @@
+services:
+  site:
+    build: .
+    container_name: washi-site
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    networks:
+      - washi
+
+networks:
+  washi:
+    external: true
+    name: nginx-proxy

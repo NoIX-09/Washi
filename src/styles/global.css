@@ -1,0 +1,216 @@
+html {
+  touch-action: manipulation;
+}
+
+body {
+  font-family: 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', serif;
+}
+
+/* 组件颜色一律走 var(--c-*)，token 自己随 body.dark 翻转，
+   所以这里（以及各组件里）都不需要写任何暗色覆盖 */
+
+
+
+/* 看板娘：关闭时隐藏所有带 data-mascot 的插图（NoIXCard 机器人头像除外） */
+.mascot-off [data-mascot] {
+  display: none !important;
+}
+
+.pencil-line {
+  height: 2px;
+  border: none;
+  background: repeating-linear-gradient(
+    to right,
+    transparent,
+    transparent 4px,
+    rgba(var(--c-accent-rgb), .25) 4px,
+    rgba(var(--c-accent-rgb), .25) 8px
+  );
+  margin: 0;
+}
+.pencil-line.wide {
+  margin: 36px 0 24px;
+}
+
+.hamburger span {
+  display: block !important;
+  width: 20px;
+  height: 2px;
+  background: var(--c-nav);
+  border-radius: 1px;
+  transition: transform .25s, opacity .25s;
+}
+.hamburger, .hamburger span {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+/* 文章正文代码：代码块（Shiki css-variables 主题）与行内代码。
+   Shiki 只在 <pre> 上写 var(--astro-code-token-*)，所以这里把那些变量
+   指向主题 token 即可 —— 明暗两套由 body.dark 换掉 --c-* 自动完成，
+   不必再写一遍 body.dark .astro-code */
+.astro-code {
+  --astro-code-foreground: var(--c-code-text);
+  --astro-code-background: var(--c-code-bg);
+  --astro-code-token-comment: var(--c-code-comment);
+  --astro-code-token-keyword: var(--c-code-keyword);
+  --astro-code-token-string: var(--c-code-string);
+  --astro-code-token-constant: var(--c-code-constant);
+  --astro-code-token-function: var(--c-code-function);
+  --astro-code-token-parameter: var(--c-code-parameter);
+  --astro-code-token-string-expression: var(--c-code-string);
+  --astro-code-token-punctuation: var(--c-code-punctuation);
+  --astro-code-token-link: var(--c-code-link);
+
+  font-family: 'LXGW WenKai Mono', 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  border-radius: 8px;
+  padding: 16px 20px;
+  overflow-x: auto;
+  margin: 0 0 16px;
+}
+
+/* 行内代码 */
+.post-body code {
+  font-family: 'LXGW WenKai Mono', 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', monospace;
+  font-size: 13px;
+  /* 明暗共用同一档透明度，差别肉眼不可辨 */
+  background: rgba(var(--c-accent-rgb), .08);
+  color: var(--c-text-strong);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.post-body pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+}
+
+/* 文章/作品正文（Markdown）通用 prose 样式，供 blog 与 works 详情页复用 */
+.post-body {
+  font-size: 15px;
+  color: var(--c-prose);
+  line-height: 1.9;
+}
+.post-body h1,
+.post-body h2,
+.post-body h3,
+.post-body h4 {
+  font-family: 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', serif;
+  font-weight: 500;
+  color: var(--c-heading);
+}
+.post-body h1 { font-size: 24px; margin: 32px 0 12px; }
+.post-body h2 {
+  font-size: 20px;
+  margin: 32px 0 12px;
+  padding-left: 12px;
+  border-left: 3px solid var(--c-accent);
+}
+.post-body h3 { font-size: 17px; margin: 24px 0 10px; }
+.post-body h4 { font-size: 15px; margin: 20px 0 8px; }
+.post-body p { margin: 0 0 16px; }
+.post-body ul,
+.post-body ol { margin: 0 0 16px; padding-left: 24px; }
+.post-body li { margin: 4px 0; }
+.post-body a { color: var(--c-accent); text-decoration: underline; text-underline-offset: 3px; }
+.post-body a:hover { color: var(--c-accent-hover); }
+.post-body strong { color: var(--c-heading); font-weight: 600; }
+.post-body blockquote {
+  margin: 0 0 16px;
+  padding: 8px 16px;
+  border-left: 3px solid var(--c-gold);
+  background: rgba(var(--c-accent-rgb), .05);
+  color: var(--c-text);
+}
+/* 图片按原比例缩放不拉伸，限制在容器宽度与视口高度内。
+   转成块级 + auto 外边距让插图居中；顺带去掉行内元素在基线上留的那道空隙 */
+.post-body img {
+  display: block;
+  margin: 8px auto;
+  max-width: 100%;
+  max-height: 70vh;
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+}
+.post-body hr { border: none; border-top: 1px solid rgba(var(--c-accent-rgb), .15); margin: 24px 0; }
+.post-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 16px;
+  font-size: 14px;
+}
+.post-body th,
+.post-body td {
+  border: 1px solid rgba(var(--c-accent-rgb), .15);
+  padding: 8px 12px;
+  text-align: left;
+}
+.post-body th { background: rgba(var(--c-accent-rgb), .07); font-weight: 500; }
+
+/* 详情页标题下的相关链接按钮排（blog 与 works 共用，渲染见 components/PageLinks.astro）。
+   放在全局是因为组件自己的 <style> 会带 Astro 作用域属性，一处定义两处用不了 */
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(var(--c-accent-rgb), .08);
+  font-family: 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', serif;
+  font-size: 14px;
+  color: var(--c-accent);
+  text-decoration: none;
+  transition: background .2s, color .2s;
+}
+.action-btn:hover { background: rgba(var(--c-accent-rgb), .18); color: var(--c-accent-hover); }
+
+/* 详情页底部返回链接 / 未找到（blog 与 works 共用） */
+.post-footer {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(var(--c-accent-rgb), .12);
+}
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', serif;
+  font-size: 14px;
+  color: var(--c-accent);
+  text-decoration: none;
+  transition: color .2s;
+}
+.back-link:hover { color: var(--c-accent-hover); }
+.not-found { text-align: center; padding: 80px 0; }
+.not-found .code {
+  font-family: 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', serif;
+  font-size: 72px;
+  font-weight: 500;
+  color: var(--c-heading);
+  display: block;
+}
+.not-found p { margin: 12px 0 0; font-family: 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', serif; font-size: 16px; color: var(--c-text); }
+.not-found a {
+  display: inline-block;
+  margin-top: 24px;
+  font-family: 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', serif;
+  font-size: 14px;
+  color: var(--c-accent);
+  text-decoration: none;
+  transition: color .2s;
+}
+.not-found a:hover { color: var(--c-accent-hover); }
+
+@media (max-width: 600px) {
+  .post-body { font-size: 14px; }
+  .post-body h2 { font-size: 18px; }
+}

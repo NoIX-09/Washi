@@ -1,0 +1,16 @@
+node_modules
+dist
+.astro
+.git
+
+# 本地产物：内容备份与素材母版，不该进构建上下文
+content-backup
+# fonts-src 是 74 MB 源字体，build stage 从独立的 fonts stage 取（见 Dockerfile）
+fonts-src
+live2d-src
+assets-src
+# 字体子集是构建产物，构建期由 integration 生成，不必进上下文
+public/fonts
+
+# 注意：.env 故意不排除 —— 构建期变量（含 EXCLUDE_EXAMPLES）靠它带进 build stage。
+# stage 2 只 COPY --from=build /app/dist，.env 不会进最终镜像

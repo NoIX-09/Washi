@@ -1,0 +1,80 @@
+---
+import { Icon } from 'astro-icon/components';
+import { Image } from 'astro:assets';
+import avatar from '../assets/head.jpg';
+import { profile } from '../site.config';
+import { t, type Locale } from '../i18n/translations';
+
+const locale = (Astro.currentLocale || 'zh-CN') as Locale;
+---
+<div class="profile">
+  {/* 固定 80px（.avatar），fixed 布局 → sizes 就是 80px */}
+  <Image class="avatar" src={avatar} alt="avatar" layout="fixed" width={80} height={80} loading="lazy" decoding="async" />
+  <h3>{profile.name}</h3>
+  <p>{profile.bio}</p>
+  <div class="links">
+    <a href={profile.social.bilibili} title={t('profile.bilibili', locale)} target="_blank" rel="noopener"><Icon name="ph:video-duotone" size="18" /></a>
+    <a href={profile.social.github} title={t('profile.github', locale)} target="_blank" rel="noopener"><Icon name="ph:github-logo-duotone" size="18" /></a>
+    <a href={`mailto:${profile.social.email}`} title={t('profile.email', locale)}><Icon name="ph:envelope-duotone" size="18" /></a>
+  </div>
+</div>
+
+<style>
+  .profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 28px 20px 24px;
+    border-radius: 12px;
+    background: var(--c-surface);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    margin-left: -6px;
+  }
+  .avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 14px;
+    border: 3px solid var(--c-accent-solid);
+    object-fit: cover;
+  }
+  .profile h3 {
+    margin: 14px 0 0;
+    font-family: 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', serif;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--c-heading);
+  }
+  .profile p {
+    margin: 8px 0 0;
+    font-size: 13px;
+    color: var(--c-text);
+    line-height: 1.6;
+    text-align: center;
+  }
+  .links {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .links a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    color: var(--c-text);
+    transition: background .2s, color .2s;
+  }
+  .links a:hover {
+    background: rgba(var(--c-accent-rgb), .1);
+    color: var(--c-accent);
+  }
+
+  @media (max-width: 600px) {
+    .profile { padding: 20px 16px; margin-left: 0; }
+    .avatar { width: 64px; height: 64px; border-radius: 12px; }
+    .profile h3 { font-size: 15px; }
+  }
+</style>

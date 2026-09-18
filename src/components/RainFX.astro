@@ -1,0 +1,114 @@
+<canvas id="rain-canvas" style="display:none"></canvas>
+
+<style>
+  #rain-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+  body.fx-rain #rain-canvas {
+    display: block !important;
+  }
+</style>
+
+<script>
+import { readThemeColors } from '../scripts/theme-colors';
+
+(function() {
+  const canvas = document.getElementById('rain-canvas') as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d')!;
+
+  interface Drop { x: number; y: number; r: number; maxR: number; opacity: number; life: number; maxLife: number }
+  let drops: Drop[] = [];
+  let animId = 0;
+  let running = false;
+  // 颜色来自 --c-fx-rain-rgb，每次启动时重读（见 startRain）
+  let colors = readThemeColors();
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function spawn() {
+    drops.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: 1 + Math.random() * 3,
+      maxR: 10 + Math.random() * 20,
+      opacity: .5 + Math.random() * .3,
+      life: 0,
+      maxLife: 60 + Math.random() * 50,
+    });
+  }
+
+  function draw() {
+    if (!running) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = drops.length - 1; i >= 0; i--) {
+      const d = drops[i];
+      d.life++;
+      const progress = d.life / d.maxLife;
+      const r = d.r + (d.maxR - d.r) * progress;
+      const alpha = d.opacity * (1 - progress);
+
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, r * .15, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${colors.rain},${alpha * .6})`;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, r, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${colors.rain},${alpha})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      if (progress > 1) drops.splice(i, 1);
+    }
+
+    if (Math.random() < .45) spawn();
+    if (Math.random() < .15) spawn();
+
+    animId = requestAnimationFrame(draw);
+  }
+
+  function startRain() {
+    // 重读颜色，且必须放在守卫之前：切昼夜时 MutationObserver 走的也是这条路径，
+    // 已经跑着的时候也要把新颜色换上去
+    colors = readThemeColors();
+    if (running) return;
+    running = true;
+    drops = [];
+    canvas.style.display = 'block';
+    draw();
+  }
+  function stopRain() {
+    running = false;
+    cancelAnimationFrame(animId);
+    canvas.style.display = 'none';
+  }
+
+  const observer = new MutationObserver(() => {
+    if (document.body.classList.contains('fx-rain')) {
+      startRain();
+    } else {
+      stopRain();
+    }
+  });
+  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+  if (document.body.classList.contains('fx-rain')) {
+    if ('requestIdleCallback' in window) requestIdleCallback(startRain, { timeout: 2500 });
+    else startRain();
+  }
+
+  // Layout 的偏好脚本可能晚于本模块执行，它初始化完会补派一次 fx-init
+  document.body.addEventListener('fx-init', function() {
+    if (document.body.classList.contains('fx-rain')) startRain();
+  });
+})();
+</script>

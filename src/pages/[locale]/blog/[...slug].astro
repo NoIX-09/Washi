@@ -1,0 +1,79 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { Icon } from 'astro-icon/components';
+import PageLinks from '../../../components/PageLinks.astro';
+import { getCollection, getEntry, render } from 'astro:content';
+import { t, LOCALES, type Locale } from '../../../i18n/translations';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  return LOCALES.flatMap(l =>
+    posts.map(p => ({ params: { locale: l, slug: p.id } }))
+  );
+}
+
+const { slug } = Astro.params;
+const locale = (Astro.currentLocale || 'zh-CN') as Locale;
+const post = await getEntry('blog', slug as string);
+const { Content } = post ? await render(post) : { Content: null };
+---
+
+<Layout title={post ? post.data.title : '404'}>
+  <Fragment slot="head">
+    {post?.data?.style && <style is:global set:html={post.data.style} />}
+  </Fragment>
+  <div class="page">
+    {post && Content ? (
+      <article class="post">
+        <h1 class="post-title">{post.data.title}</h1>
+        <time class="post-date">{post.data.date}</time>
+        <PageLinks links={post.data.links} />
+        <hr class="pencil-line wide" />
+        <div class="post-body">
+          <Content />
+        </div>
+        <div class="post-footer">
+          <a href={`/${locale}/blog`} class="back-link">
+            <Icon name="ph:arrow-left-duotone" size="16" />
+            <span>{t('blog.backHome', locale)}</span>
+          </a>
+        </div>
+      </article>
+    ) : (
+      <div class="not-found">
+        <span class="code">404</span>
+        <p>{t('404.postNotFound', locale)}</p>
+        <a href={`/${locale}/blog`}>{t('404.backBlog', locale)}</a>
+      </div>
+    )}
+  </div>
+</Layout>
+
+<style>
+  .page {
+    flex: 1;
+    width: 100%;
+    max-width: 880px;
+    padding: 40px 24px 56px;
+    box-sizing: border-box;
+  }
+  .post-title {
+    font-family: 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', serif;
+    font-size: 32px;
+    font-weight: 500;
+    color: var(--c-heading);
+    margin: 0;
+  }
+  .post-date {
+    display: block;
+    margin-top: 8px;
+    font-family: 'LXGW WenKai Mono', 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', monospace;
+    font-size: 14px;
+    color: var(--c-muted-dim);
+  }
+
+  @media (max-width: 600px) {
+    .page { padding: 24px 16px 40px; }
+    .post-title { font-size: 24px; }
+  }
+</style>

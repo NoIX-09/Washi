@@ -1,0 +1,69 @@
+# build output
+dist/
+# generated types
+.astro/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# environment variables
+# 收 Vite 的整套命名：.env / .env.local / .env.[mode] / .env.[mode].local。
+# 只写 .env 会漏掉 .env.local 这类，而它们和 .env 一样装私密配置
+.env
+.env.*
+# .env.example 是模板，必须入库（负向规则要写在忽略规则之后才生效）
+!.env.example
+
+# macOS-specific files
+.DS_Store
+
+# jetbrains setting folder
+.idea/
+
+# Claude Code 的本地权限白名单（`.local` 后缀按惯例是机器本地文件，每台机器允许的命令不同）
+.claude/settings.local.json
+
+# 字体脚本的临时产物：内容是站点用字表，会带出私密内容的用字
+scripts/.*.txt
+
+# 字体子集是构建产物，不入库（源 TTF 见 fonts-src/，重建见 scripts/fonts-integration.mjs）。
+# 整个目录都忽略，不只 *.woff2：fonts.css 同样是生成物，单留 css 只会引用到不存在的文件。
+# 也别改回入库 —— woff2 编码着「站点用过哪些字」，而这份用字集合来自私密内容
+public/fonts/
+
+# 源字体（三个 TTF 共约 74 MB，构建前自动下载，不入库）
+fonts-src/
+
+# Live2D 贴图母版（未压缩 PNG，本地转 WebP 用，不入库）
+live2d-src/
+
+# 插画母版（高分辨率原图，入库的那份已按实际展示宽度压过，不入库）
+assets-src/
+
+# 内容集合不入库，每个集合只留一个示例条目（_example.*）。
+# 用 ** 而非 *：后者只匹配一层，按年份分目录（blog/2026/xxx.md）时会静默漏进公开仓
+src/content/activity/**/*.json
+src/content/friends/**/*.json
+src/content/skills/**/*.json
+src/content/blog/**/*.md
+src/content/blog/**/*.mdx
+src/content/works/**/*.md
+
+# 示例条目要入库，必须写在对应忽略规则之后（父目录未被忽略，反向规则才生效）。
+# 刻意只写单层 *，把豁免面精确限制在这 5 个文件上 —— 改成 ** 是放宽，别当 bug 改
+!src/content/*/_example.*
+
+# 个人内容备份（绝不入库）
+content-backup/
+
+# 个人图片：不入库，留给自己的部署用。
+# 站内展示走 src/assets/head.jpg（经 astro:assets 出哈希路径），那份是入库的
+public/head.jpg
+public/head.webp
